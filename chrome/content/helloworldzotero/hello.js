@@ -1,23 +1,58 @@
 Zotero.HelloWorldZotero = {
-	DB: null,
+    tempDir: "/tmp",
+
+    dateString: function () {
+        function padwith0(n, len) {
+            len = len || 2;
+            var mypad = "000000";
+            return mypad.slice(0, len - n.toString().length) + n;
+        }
+        var d = new Date();
+        return "" + d.getFullYear() + "-" + padwith0(d.getMonth() + 1) + "-" + padwith0(d.getDate()) +
+            " " + padwith0(d.getHours()) + ":" + padwith0(d.getMinutes()) + ":" + padwith0(d.getSeconds()) + "." + d.getMilliseconds();
+    },
 	
 	init: function () {
-		// Connect to (and create, if necessary) helloworld.sqlite in the Zotero directory
-		this.DB = new Zotero.DBConnection('helloworld');
-		
-		if (!this.DB.tableExists('changes')) {
-			this.DB.query("CREATE TABLE changes (num INT)");
-			this.DB.query("INSERT INTO changes VALUES (0)");
-		}
-		
-		// Register the callback in Zotero as an item observer
-		var notifierID = Zotero.Notifier.registerObserver(this.notifierCallback, ['item']);
-		
-		// Unregister callback when the window closes (important to avoid a memory leak)
-		window.addEventListener('unload', function(e) {
-				Zotero.Notifier.unregisterObserver(notifierID);
-		}, false);
 	},
+
+    // move the file to /tmp with a time-unique name
+    doMove: function() {
+        var ps = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
+            .getService(Components.interfaces.nsIPromptService);
+        function pp(s) {
+            ps.alert(null, "", s);
+        }
+		
+        var tomove_list = [];
+        var selected_items = ZoteroPane.getSelectedItems();
+        for each(var item in selected_items) {
+            // if selected item is itself an attachment
+            if(item.isAttachment()) {
+                //tomove_list.push(item.getField("key"));
+                tomove_list.push(Zotero.Attachments.getStorageDirectory(item.itemID));
+            } else {
+                // if selected item is a normal entry, find its attachments
+                for each(var attID in item.getAttachments()) {
+                    if(typeof(attID) != "number") {
+                        continue;
+                    }
+                    var attItem = Zotero.Items.get(attID)
+                    var filename = attItem.getFilename();
+                    if(!filename.toLowerCase().endsWith(".pdf")) {
+                        continue;
+                    }
+                    tomove_list.push(Zotero.Attachments.getStorageDirectory(attItem.itemID));
+                }
+            }
+        }
+        for each(var fobj in tomove_list) {
+            var move_target = fobj.leafName + "_" + this.dateString();
+            // pp(fobj.path + "\n--------->\n" + move_target);
+            var tmpdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+            tmpdir.initWithPath(this.tempDir);
+            fobj.moveTo(tmpdir, move_target);
+        }
+    },
 	
 	insertHello: function() {
 		var data = {
@@ -33,65 +68,6 @@ Zotero.HelloWorldZotero = {
 			url: 'http://www.zotero.org'
 		};
 		Zotero.Items.add('computerProgram', data); // returns a Zotero.Item instance
-	},
-	
-	// Callback implementing the notify() method to pass to the Notifier
-	notifierCallback: {
-		notify: function(event, type, ids, extraData) {
-			if (event == 'add' || event == 'modify' || event == 'delete') {
-				// Increment a counter every time an item is changed
-				Zotero.HelloWorldZotero.DB.query("UPDATE changes SET num = num + 1");
-				
-				if (event != 'delete') {
-					// Retrieve the added/modified items as Item objects
-					var items = Zotero.Items.get(ids);
-				}
-				else {
-					var items = extraData;
-				}
-				
-				// Loop through array of items and grab titles
-				var titles = [];
-				for each(var item in items) {
-					// For deleted items, get title from passed data
-					if (event == 'delete') {
-						titles.push(item.old.title ? item.old.title : '[No title]');
-					}
-					else {
-						titles.push(item.getField('title'));
-					}
-				}
-				
-				if (!titles.length) {
-					return;
-				}
-				
-				// Get the localized string for the notification message and
-				// append the titles of the changed items
-				var stringName = 'notification.item' + (titles.length==1 ? '' : 's');
-				switch (event) {
-					case 'add':
-						stringName += "Added";
-						break;
-						
-					case 'modify':
-						stringName += "Modified";
-						break;
-						
-					case 'delete':
-						stringName += "Deleted";
-						break;
-				}
-				
-				var str = document.getElementById('hello-world-zotero-strings').
-					getFormattedString(stringName, [titles.length]) + ":\n\n" +
-					titles.join("\n");
-			}
-			
-			var ps = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
-				.getService(Components.interfaces.nsIPromptService);
-			ps.alert(null, "", str);
-		}
 	}
 };
 

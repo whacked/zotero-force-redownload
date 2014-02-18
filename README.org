@@ -1,0 +1,28 @@
+create a right click menu to force re-download of the file from the remote file store
+
+** what for
+
+   one of my machines consistently doesn't download updated pdfs from
+   the file storage (box.com dav) when another client updates it.
+
+   related discussions:
+
+   - https://forums.zotero.org/discussion/29468/zotero-not-downloading-attachments-from-webdav-server/
+   - https://forums.zotero.org/discussion/28854/webdav-syncing-new-computer-no-downloading/
+
+   neither resolved my issue. using zotero with webdav on box.com has
+   always been iffy for me, so i'm not filing a debug request for
+   this. you can force zotero to re-download the updated file on
+   webdav by removing the directory containing the
+   supposed-to-be-updated file. this just adds a right-click menu to
+   do that.
+   
+   this is based on the [[http://www.zotero.org/support/dev/sample_plugin][hello world extension]]; refer to the [[https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O][mozilla
+   docs]] for file I/O methods. also see [[https://github.com/jlegewie/zotfile/tree/master/chrome/content/zotfile][zotfile]] for more code examples.
+
+** to use
+
+   turn this into an xpi package with e.g.: =zip -r
+   /tmp/mypackage.xpi *= and drag it into your firefox.
+
+   

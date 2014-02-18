@@ -12,9 +12,16 @@
 	
 	<menupopup id="zotero-tb-actions-popup">
 		<!-- Make sure the menu separator for utilities is visible -->
+        <!--
 		<menuseparator id="zotero-tb-actions-plugins-separator" hidden="false"/>
 		<menuitem insertbefore="zotero-tb-actions-separator" label="&helloworldzotero.name;"
 			oncommand="Zotero.HelloWorldZotero.insertHello()"/>
+        -->
+	</menupopup>
+
+	<menupopup id="zotero-itemmenu">
+        <menuitem id="id-helloworldzotero-clear-local-copy" label="&helloworldzotero.clear-local-copy;"
+            oncommand="Zotero.HelloWorldZotero.doMove()" />
 	</menupopup>
 	
 	<!-- Include the main extension logic -->
